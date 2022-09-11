@@ -46,7 +46,7 @@ async function run({
   outDir,
   swcConfig,
   extensions = COMPILE_SUFFIX,
-  ignore: _ignore,
+  ignore: _ignore = [],
   copyfile = true,
   beforeCopy,
 }) {
@@ -180,9 +180,19 @@ async function generateDeclaration(configList) {
     spaces: 2,
   });
 
-  await execFileP(tscPath, ["-p", libTsConfPath, "--outDir", tempPath], {
-    cwd: process.cwd(),
-  });
+  try {
+    await execFileP(tscPath, ["-p", libTsConfPath, "--outDir", tempPath], {
+      cwd: process.cwd(),
+    });
+  } catch (e) {
+    if (e.stdout) {
+      console.log(e.stdout);
+    }
+    if (e.stderr) {
+      console.log(e.stderr);
+    }
+    return;
+  }
 
   let isFirstConf = true;
 

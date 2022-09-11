@@ -1,5 +1,5 @@
 {
-  "extends": "/Users/lixianjie/project/openSource/hooks/tsconfig.json",
+  "extends": "/Users/lixianjie/project/openSource/utils/tsconfig.json",
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
