@@ -28,11 +28,6 @@ export async function init() {
     ...scripts,
   };
 
-  pkg.devDependencies = {
-    ...pkg.devDependencies,
-    "@m78/build-tools": "*",
-  };
-
   pkg.files = ["**"];
   pkg.main = "index.js";
   pkg.type = "module";

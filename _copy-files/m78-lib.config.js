@@ -5,7 +5,7 @@ import { defineConfig } from "@m78/build-tools/defineConfig.js";
 export default defineConfig([
   {
     inpDir: "src",
-    outDir: "esm",
+    outDir: "dist",
     swcConfig: {
       module: {
         type: "es6",
