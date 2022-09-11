@@ -24,7 +24,7 @@ export default defineConfig([
   },
   {
     inpDir: "src",
-    outDir: "umd",
+    outDir: "dist/umd",
     swcConfig: {
       module: {
         type: "umd",
