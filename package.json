@@ -1,6 +1,6 @@
 {
   "name": "@m78/build-tools",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "simple builder for M78 projects, which also contain several developer tools.",
   "main": "index.js",
   "type": "module",
