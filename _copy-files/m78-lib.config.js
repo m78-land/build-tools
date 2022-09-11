@@ -1,7 +1,8 @@
 import sass from "sass";
 import { mkdir, writeFile } from "node:fs/promises";
+import { defineConfig } from "@m78/build-tools/defineConfig.js";
 
-export default {
+export default defineConfig({
   build: [
     {
       inpDir: "src",
@@ -11,7 +12,7 @@ export default {
           type: "es6",
         },
       },
-      beforeCopy: async meta => {
+      beforeCopy: async (meta) => {
         if (meta.suffix === ".scss") {
           const result = sass.compile(meta.filePath);
 
@@ -32,4 +33,4 @@ export default {
       },
     },
   ],
-};
+});

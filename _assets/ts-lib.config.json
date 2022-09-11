@@ -1,0 +1,12 @@
+{
+  "extends": "/Users/lixianjie/project/openSource/hooks/tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true
+  },
+  "exclude": [
+    "./src/**/*.test.tsx",
+    "./src/**/*.test.ts"
+  ]
+}

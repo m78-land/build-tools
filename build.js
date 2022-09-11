@@ -4,27 +4,56 @@ import glob from "glob";
 import { writeFile, mkdir, copyFile, rm } from "node:fs/promises";
 import _ from "lodash";
 import { config } from "./config.js";
+import { ensureArray, isArray, isObject } from "@m78/utils";
+import { execFile } from "node:child_process";
+import { promisify } from "util";
+import fse from "fs-extra";
+import * as url from "url";
+
+const execFileP = promisify(execFile);
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+
+/** 默认过滤文件 */
+const BASE_IGNORE = ["**/*.d.ts", "**/*.test.*(js|ts|jsx|tsx)"];
+/** 支持编译的文件后缀 */
+const COMPILE_SUFFIX = ["js", "ts", "jsx", "tsx"];
+
+/** tsc执行文件路径 */
+const tscPath = path.resolve(process.cwd(), "./node_modules/.bin/tsc");
+/** ts配置路径 */
+const tsConfPath = path.resolve(process.cwd(), "./tsconfig.json");
+/** 用户package.json路径 */
+const pkgPath = path.resolve(process.cwd(), "./package.json");
 
 export async function build() {
   const res = await import(`${process.cwd()}/m78-lib.config.js`);
 
-  const buildConf = res.default?.build;
+  let buildConf = res.default;
 
-  await Promise.all(buildConf.map(run));
+  if (!isArray(buildConf) && !isObject(buildConf)) {
+    throw Error("build config is not found");
+  }
+
+  const configList = ensureArray(buildConf);
+
+  await Promise.all(configList.map(run));
+
+  await generateDeclaration(configList);
 }
 
 async function run({
   inpDir,
   outDir,
   swcConfig,
-  extensions = ["js", "ts", "jsx", "tsx"],
-  ignore,
+  extensions = COMPILE_SUFFIX,
+  ignore: _ignore,
   copyfile = true,
   beforeCopy,
 }) {
   const inpDirBase = path.resolve(process.cwd(), inpDir);
   const outDirBase = path.resolve(process.cwd(), outDir);
   const conf = _.defaultsDeep({}, swcConfig, config);
+  const ignore = [...BASE_IGNORE, ..._ignore];
 
   const files = glob.sync(path.resolve(process.cwd(), `${inpDir}/**/*.*`), {
     ignore, // 忽略play和demo目录
@@ -54,7 +83,7 @@ async function run({
   }).catch(() => {});
 
   // 编译
-  await outputFile({
+  await compile({
     compileList,
     inpDirBase,
     outDirBase,
@@ -67,7 +96,8 @@ async function run({
   }
 }
 
-async function outputFile({ compileList, inpDirBase, outDirBase, conf }) {
+/** 编译 */
+async function compile({ compileList, inpDirBase, outDirBase, conf }) {
   const list = [];
 
   for (const filePath of compileList) {
@@ -101,6 +131,7 @@ async function outputFile({ compileList, inpDirBase, outDirBase, conf }) {
   console.log(`✨ compile completed.`);
 }
 
+/** 文件拷贝 */
 async function copyFileHandle({
   copyList,
   inpDirBase,
@@ -126,4 +157,44 @@ async function copyFileHandle({
 
     console.log(`✨ copy completed.`);
   }
+}
+
+/** 生成ts声明文件 */
+async function generateDeclaration(configList) {
+  const exists = await fse.pathExists(tsConfPath);
+
+  if (!exists) return;
+
+  /** 存放临时声明文件的路径 */
+  const tempPath = path.resolve(process.cwd(), "./node_modules/.m78temp/dts");
+  /** 存放声明文件生成配置的路径 */
+  const libTsConfPath = path.resolve(__dirname, "./_assets/ts-lib.config.json");
+
+  await fse.remove(tempPath);
+
+  const conf = await fse.readJson(libTsConfPath);
+
+  conf.extends = tsConfPath;
+
+  await fse.writeJson(libTsConfPath, conf, {
+    spaces: 2,
+  });
+
+  await execFileP(tscPath, ["-p", libTsConfPath, "--outDir", tempPath], {
+    cwd: process.cwd(),
+  });
+
+  let isFirstConf = true;
+
+  for (const config of configList) {
+    const outDirBase = path.resolve(process.cwd(), config.outDir);
+
+    if (isFirstConf) {
+      await fse.copy(pkgPath, `${outDirBase}/package.json`);
+      isFirstConf = false;
+    }
+    await fse.copy(tempPath, outDirBase);
+  }
+
+  console.log(`✨ generate declaration completed.`);
 }
