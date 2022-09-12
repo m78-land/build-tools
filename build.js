@@ -186,10 +186,11 @@ async function generateDeclaration(configList) {
     });
   } catch (e) {
     if (e.stdout) {
-      console.log(e.stdout);
-    }
-    if (e.stderr) {
-      console.log(e.stderr);
+      console.error(e.stdout);
+    } else if (e.stderr) {
+      console.error(e.stderr);
+    } else {
+      console.error(e);
     }
     return;
   }
